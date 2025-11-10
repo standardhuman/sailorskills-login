@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Sailor Skills</title>
+
+  <!-- Montserrat Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Page-Specific Styles -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .login-container {
+      background: white;
+      padding: 2.5rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .login-header h1 {
+      margin: 0 0 0.5rem;
+      color: #205d8b;
+      font-size: 1.875rem;
+      font-weight: 700;
+    }
+
+    .login-header p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.75rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.2s;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .auth-tab.active {
+      color: #205d8b;
+      border-bottom-color: #205d8b;
+    }
+
+    .auth-tab:hover:not(.active) {
+      color: #3b82f6;
+    }
+
+    .auth-panel {
+      display: none;
+    }
+
+    .auth-panel.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      font-size: 0.875rem;
+      font-family: 'Montserrat', sans-serif;
+      background-color: white;
+      color: #1f2937;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #205d8b;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #205d8b;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #184a6e;
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .forgot-password {
+      text-align: center;
+      margin-top: 1.25rem;
+    }
+
+    .forgot-password a {
+      color: #205d8b;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .signup-link p {
+      margin: 0;
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .signup-link a {
+      color: #205d8b;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    .alert {
+      padding: 0.75rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.875rem;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #065f46;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #991b1b;
+    }
+
+    .magic-link-info {
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 0.75rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.75rem;
+      border: 1px solid #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>⚓ Sailor Skills</h1>
+      <p>Universal Login</p>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="password">Password</button>
+      <button class="auth-tab" data-tab="magic-link">Magic Link</button>
+    </div>
+
+    <!-- Password Login Panel -->
+    <div id="password-panel" class="auth-panel active">
+      <form id="password-login-form">
+        <div class="form-group">
+          <label for="password-email">Email</label>
+          <input type="email" id="password-email" name="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" id="password-login-btn">
+          Sign In
+        </button>
+      </form>
+      <div class="forgot-password">
+        <a href="/reset-password.html">Forgot password?</a>
+      </div>
+    </div>
+
+    <!-- Magic Link Panel -->
+    <div id="magic-link-panel" class="auth-panel">
+      <div class="magic-link-info">
+        Enter your email and we'll send you a secure link to sign in. No password required!
+      </div>
+      <form id="magic-link-form">
+        <div class="form-group">
+          <label for="magic-link-email">Email</label>
+          <input type="email" id="magic-link-email" name="email" required autocomplete="email">
+        </div>
+        <button type="submit" class="btn btn-primary" id="magic-link-btn">
+          Send Magic Link
+        </button>
+      </form>
+    </div>
+
+    <div class="signup-link">
+      <p>Don't have an account? <a href="/signup.html">Sign up</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/auth/login.js"></script>
+</body>
+</html>

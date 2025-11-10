@@ -1,0 +1,18 @@
+{
+  "name": "sailorskills-login",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5179",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@playwright/test": "^1.40.0"
+  }
+}
