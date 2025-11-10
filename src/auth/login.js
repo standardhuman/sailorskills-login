@@ -21,12 +21,12 @@ import { login, supabase } from '../lib/supabase-client.js'
     const redirectUrl = getRoleBasedRedirect(role)
 
     // Transfer session to target service
+    // Note: Don't use type='recovery' (that's for password reset flows)
     const hashParams = new URLSearchParams({
       access_token: session.access_token,
       refresh_token: session.refresh_token,
       expires_in: session.expires_in.toString(),
-      token_type: session.token_type,
-      type: 'recovery'
+      token_type: session.token_type
     })
 
     window.location.href = `${redirectUrl}#${hashParams.toString()}`
@@ -142,8 +142,8 @@ document.getElementById('password-login-form')?.addEventListener('submit', async
           access_token: session.access_token,
           refresh_token: session.refresh_token,
           expires_in: session.expires_in.toString(),
-          token_type: session.token_type,
-          type: 'recovery' // Tells Supabase this is a session transfer
+          token_type: session.token_type
+          // Note: Don't include type='recovery' (that's for password reset only)
         })
         window.location.href = `${redirectUrl}#${hashParams.toString()}`
       } else {
