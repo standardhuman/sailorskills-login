@@ -69,21 +69,21 @@ function getRoleBasedRedirect(role) {
   }
 
   // Otherwise, redirect based on role
-  // Use Vercel URLs for now (will use custom domains once DNS is configured)
+  // Use production custom domains
   switch (role) {
     case 'customer':
-      return 'https://sailorskills-portal.vercel.app/portal.html'
+      return 'https://portal.sailorskills.com/portal.html'
     case 'staff':
-      return 'https://sailorskills-operations.vercel.app'
+      return 'https://ops.sailorskills.com'
     case 'admin':
-      return 'https://sailorskills-operations.vercel.app' // Admin goes to Operations by default
+      return 'https://ops.sailorskills.com' // Admin goes to Operations by default
     case 'unknown':
       // If role detection failed, default to Operations (safer for staff/admin)
-      return 'https://sailorskills-operations.vercel.app'
+      return 'https://ops.sailorskills.com'
     default:
       // Fallback to Portal for unrecognized roles
       console.warn(`Unrecognized role: ${role}, redirecting to Portal`)
-      return 'https://sailorskills-portal.vercel.app/portal.html'
+      return 'https://portal.sailorskills.com/portal.html'
   }
 }
 
