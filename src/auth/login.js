@@ -1,5 +1,39 @@
 import { login, supabase } from '../lib/supabase-client.js'
 
+// Check for magic link callback or existing session on page load
+(async () => {
+  const { data: { session }, error } = await supabase.auth.getSession()
+
+  if (error) {
+    console.error('Session error:', error)
+  }
+
+  if (session) {
+    // User authenticated via magic link or has existing session
+    // Fetch user role to determine redirect
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single()
+
+    const role = profile?.role || 'customer'
+    const redirectUrl = getRoleBasedRedirect(role)
+
+    // Transfer session to target service
+    const hashParams = new URLSearchParams({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_in: session.expires_in.toString(),
+      token_type: session.token_type,
+      type: 'recovery'
+    })
+
+    window.location.href = `${redirectUrl}#${hashParams.toString()}`
+    return
+  }
+})()
+
 // Tab switching functionality
 const tabs = document.querySelectorAll('.auth-tab')
 const panels = document.querySelectorAll('.auth-panel')
