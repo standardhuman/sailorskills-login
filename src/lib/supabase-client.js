@@ -38,29 +38,31 @@ function getCookie(name) {
 }
 
 /**
- * Custom storage for Supabase with SSO cookie domain
+ * Custom storage for Supabase using localStorage only
+ *
+ * Note: We use localStorage instead of cookies because Supabase session objects
+ * are typically 2-5KB and exceed the 4KB cookie size limit, causing truncation
+ * and authentication failures (429/400 errors).
  */
 const customStorage = {
   getItem: (key) => {
-    const localValue = localStorage.getItem(key)
-    if (localValue) return localValue
-    return getCookie(key)
+    return localStorage.getItem(key)
   },
 
   setItem: (key, value) => {
     localStorage.setItem(key, value)
-    // Set domain to .sailorskills.com for SSO across subdomains
-    setCookie(key, value, { domain: '.sailorskills.com' })
   },
 
   removeItem: (key) => {
     localStorage.removeItem(key)
-    setCookie(key, '', { domain: '.sailorskills.com', maxAge: -1 })
   }
 }
 
 /**
- * Supabase client configured for SSO
+ * Supabase client for login service
+ *
+ * Uses localStorage for session persistence (default for @supabase/supabase-js).
+ * Cross-subdomain authentication is handled by transferring session to target service.
  */
 export const supabase = createClient(
   SUPABASE_URL,
@@ -72,13 +74,6 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'pkce'
-    },
-    cookieOptions: {
-      name: 'sb-auth-token',
-      domain: '.sailorskills.com', // Shared domain for SSO
-      path: '/',
-      sameSite: 'lax',
-      maxAge: 604800
     }
   }
 )
