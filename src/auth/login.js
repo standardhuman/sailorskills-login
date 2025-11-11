@@ -2,11 +2,20 @@ import { login, supabase } from '../lib/supabase-client.js'
 
 // Check for magic link callback or existing session on page load
 (async () => {
+  // Wait for Supabase to process PKCE code parameter if present
+  const hasCodeParam = window.location.search.includes('code=')
+  if (hasCodeParam) {
+    console.log('[LOGIN] PKCE code detected, waiting for Supabase to process...')
+    await new Promise(resolve => setTimeout(resolve, 1500))
+  }
+
   const { data: { session }, error } = await supabase.auth.getSession()
 
   if (error) {
     console.error('Session error:', error)
   }
+
+  console.log('[LOGIN] Session check:', { hasSession: !!session, hasCodeParam })
 
   if (session) {
     // User authenticated via magic link or has existing session
