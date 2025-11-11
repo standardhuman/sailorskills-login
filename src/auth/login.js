@@ -3,28 +3,38 @@ import { login, supabase } from '../lib/supabase-client.js'
 // Check for magic link callback or existing session on page load
 (async () => {
   try {
+    // Check for auth tokens in URL (implicit flow for magic links)
+    const hasHashTokens = window.location.hash.includes('access_token')
     const hasCodeParam = window.location.search.includes('code=')
 
+    if (hasHashTokens) {
+      console.log('[LOGIN] Magic link tokens detected in hash, waiting for Supabase auto-detection...')
+
+      // Wait for Supabase to automatically process the hash tokens
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const { data: { session }, error } = await supabase.auth.getSession()
+
+      if (error) {
+        console.error('[LOGIN] Session error:', error)
+      } else if (session) {
+        console.log('[LOGIN] Session established from magic link')
+        await handleSessionRedirect(session)
+        return
+      } else {
+        console.warn('[LOGIN] Hash tokens present but no session established')
+      }
+    }
+
+    // Fallback: Check for PKCE code (for password login flow)
     if (hasCodeParam) {
       console.log('[LOGIN] PKCE code detected, manually exchanging code for session...')
 
-      // DIAGNOSTIC: Check localStorage for code_verifier
-      const storageKeys = Object.keys(localStorage)
-      console.log('[LOGIN DIAGNOSTIC] localStorage keys:', storageKeys)
-      const codeVerifierKeys = storageKeys.filter(key => key.includes('code-verifier') || key.includes('pkce'))
-      console.log('[LOGIN DIAGNOSTIC] code_verifier related keys:', codeVerifierKeys)
-      codeVerifierKeys.forEach(key => {
-        console.log(`[LOGIN DIAGNOSTIC] ${key}:`, localStorage.getItem(key))
-      })
-
-      // Extract the code parameter
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
-      console.log('[LOGIN DIAGNOSTIC] Code from URL:', code)
 
       if (code) {
         try {
-          // Manually exchange the code for a session
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
           if (error) {
@@ -247,7 +257,7 @@ document.getElementById('magic-link-form')?.addEventListener('submit', async (e)
     const redirectTo = explicitRedirect || `${window.location.origin}/login.html`
 
     console.log('[LOGIN] Requesting magic link for:', email)
-    console.log('[LOGIN] emailRedirectTo:', redirectTo)
+    console.log('[LOGIN] Redirect URL:', redirectTo)
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -257,14 +267,6 @@ document.getElementById('magic-link-form')?.addEventListener('submit', async (e)
     })
 
     if (error) throw error
-
-    // DIAGNOSTIC: Check if code_verifier was stored
-    const storageKeys = Object.keys(localStorage)
-    const codeVerifierKeys = storageKeys.filter(key => key.includes('code-verifier') || key.includes('pkce'))
-    console.log('[LOGIN DIAGNOSTIC] After signInWithOtp, code_verifier keys:', codeVerifierKeys)
-    codeVerifierKeys.forEach(key => {
-      console.log(`[LOGIN DIAGNOSTIC] ${key}:`, localStorage.getItem(key)?.substring(0, 50) + '...')
-    })
 
     // Show success message
     showAlert('Magic link sent! Check your email to sign in.', 'success')

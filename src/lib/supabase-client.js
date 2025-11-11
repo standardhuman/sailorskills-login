@@ -73,7 +73,7 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce'
+      flowType: 'implicit' // Use implicit flow for magic links (PKCE requires code_verifier to persist across email click)
     }
   }
 )
