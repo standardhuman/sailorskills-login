@@ -2,44 +2,65 @@ import { login, supabase } from '../lib/supabase-client.js'
 
 // Check for magic link callback or existing session on page load
 (async () => {
-  // Wait for Supabase to process PKCE code parameter if present
-  const hasCodeParam = window.location.search.includes('code=')
-  if (hasCodeParam) {
-    console.log('[LOGIN] PKCE code detected, waiting for Supabase to process...')
-    await new Promise(resolve => setTimeout(resolve, 1500))
-  }
+  try {
+    // Wait for Supabase to process PKCE code parameter if present
+    const hasCodeParam = window.location.search.includes('code=')
+    if (hasCodeParam) {
+      console.log('[LOGIN] PKCE code detected, waiting for Supabase to process...')
+      await new Promise(resolve => setTimeout(resolve, 1500))
+    }
 
-  const { data: { session }, error } = await supabase.auth.getSession()
+    const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (error) {
-    console.error('Session error:', error)
-  }
+    if (error) {
+      console.error('[LOGIN] Session error:', error)
+      return // Don't redirect on error, show login form
+    }
 
-  console.log('[LOGIN] Session check:', { hasSession: !!session, hasCodeParam })
-
-  if (session) {
-    // User authenticated via magic link or has existing session
-    // Fetch user role to determine redirect
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .single()
-
-    const role = profile?.role || 'customer'
-    const redirectUrl = getRoleBasedRedirect(role)
-
-    // Transfer session to target service
-    // Note: Don't use type='recovery' (that's for password reset flows)
-    const hashParams = new URLSearchParams({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-      expires_in: session.expires_in.toString(),
-      token_type: session.token_type
+    console.log('[LOGIN] Session check:', {
+      hasSession: !!session,
+      hasCodeParam,
+      userEmail: session?.user?.email
     })
 
-    window.location.href = `${redirectUrl}#${hashParams.toString()}`
-    return
+    if (session) {
+      // User authenticated via magic link or has existing session
+      console.log('[LOGIN] Session found, fetching user role...')
+
+      // Fetch user role to determine redirect
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single()
+
+      if (profileError) {
+        console.warn('[LOGIN] No user_profile found, defaulting to customer role')
+      }
+
+      const role = profile?.role || 'customer'
+      console.log('[LOGIN] User role:', role)
+
+      const redirectUrl = getRoleBasedRedirect(role)
+      console.log('[LOGIN] Redirecting to:', redirectUrl)
+
+      // Transfer session to target service
+      // Note: Don't use type='recovery' (that's for password reset flows)
+      const hashParams = new URLSearchParams({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_in: session.expires_in.toString(),
+        token_type: session.token_type
+      })
+
+      window.location.href = `${redirectUrl}#${hashParams.toString()}`
+      return
+    }
+
+    console.log('[LOGIN] No session found, showing login form')
+  } catch (err) {
+    console.error('[LOGIN] Fatal error:', err)
+    // Show login form on any error
   }
 })()
 
