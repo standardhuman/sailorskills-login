@@ -70,11 +70,23 @@ import { login, supabase } from '../lib/supabase-client.js'
     console.log('[LOGIN] Session check:', {
       hasSession: !!session,
       hasCodeParam,
-      userEmail: session?.user?.email
+      userEmail: session?.user?.email,
+      expiresAt: session?.expires_at
     })
 
     if (session) {
-      await handleSessionRedirect(session)
+      // Verify the session is actually valid by making an authenticated request
+      const { data: user, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        console.warn('[LOGIN] Session exists but is invalid (expired/revoked), clearing and showing login form')
+        // Clear invalid session from localStorage
+        await supabase.auth.signOut()
+        console.log('[LOGIN] Invalid session cleared, showing login form')
+      } else {
+        console.log('[LOGIN] Session is valid, redirecting...')
+        await handleSessionRedirect(session)
+      }
     } else {
       console.log('[LOGIN] No session found, showing login form')
     }
