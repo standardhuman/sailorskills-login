@@ -17,12 +17,20 @@ import { login, supabase } from '../lib/supabase-client.js'
 
       if (error) {
         console.error('[LOGIN] Session error:', error)
+        // Clear invalid hash tokens to prevent loops
+        if (window.location.hash) {
+          history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
       } else if (session) {
         console.log('[LOGIN] Session established from magic link')
         await handleSessionRedirect(session)
         return
       } else {
-        console.warn('[LOGIN] Hash tokens present but no session established')
+        console.warn('[LOGIN] Hash tokens present but no session established - clearing stale tokens')
+        // Clear stale hash tokens (likely from logout redirect)
+        if (window.location.hash) {
+          history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
       }
     }
 
