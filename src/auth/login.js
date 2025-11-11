@@ -6,34 +6,30 @@ import { login, supabase } from '../lib/supabase-client.js'
     const hasCodeParam = window.location.search.includes('code=')
 
     if (hasCodeParam) {
-      console.log('[LOGIN] PKCE code detected, waiting for auth state change...')
+      console.log('[LOGIN] PKCE code detected, manually exchanging code for session...')
 
-      // Listen for auth state change from PKCE processing
-      const authPromise = new Promise((resolve) => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          console.log('[LOGIN] Auth state changed:', event, { hasSession: !!session })
-          if (event === 'SIGNED_IN' && session) {
-            subscription.unsubscribe()
-            resolve(session)
+      // Extract the code parameter
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+
+      if (code) {
+        try {
+          // Manually exchange the code for a session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (error) {
+            console.error('[LOGIN] Failed to exchange code:', error)
+          } else if (data.session) {
+            console.log('[LOGIN] Successfully exchanged code for session')
+            await handleSessionRedirect(data.session)
+            return
           }
-        })
-
-        // Also set a timeout in case auth state change doesn't fire
-        setTimeout(() => {
-          subscription.unsubscribe()
-          resolve(null)
-        }, 3000)
-      })
-
-      const session = await authPromise
-
-      if (session) {
-        console.log('[LOGIN] Got session from auth state change')
-        await handleSessionRedirect(session)
-        return
+        } catch (err) {
+          console.error('[LOGIN] Error exchanging code:', err)
+        }
       }
 
-      console.log('[LOGIN] No session from auth state change, checking manually...')
+      console.log('[LOGIN] Code exchange failed or no session, checking manually...')
     }
 
     const { data: { session }, error } = await supabase.auth.getSession()
