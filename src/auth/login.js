@@ -8,9 +8,19 @@ import { login, supabase } from '../lib/supabase-client.js'
     if (hasCodeParam) {
       console.log('[LOGIN] PKCE code detected, manually exchanging code for session...')
 
+      // DIAGNOSTIC: Check localStorage for code_verifier
+      const storageKeys = Object.keys(localStorage)
+      console.log('[LOGIN DIAGNOSTIC] localStorage keys:', storageKeys)
+      const codeVerifierKeys = storageKeys.filter(key => key.includes('code-verifier') || key.includes('pkce'))
+      console.log('[LOGIN DIAGNOSTIC] code_verifier related keys:', codeVerifierKeys)
+      codeVerifierKeys.forEach(key => {
+        console.log(`[LOGIN DIAGNOSTIC] ${key}:`, localStorage.getItem(key))
+      })
+
       // Extract the code parameter
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
+      console.log('[LOGIN DIAGNOSTIC] Code from URL:', code)
 
       if (code) {
         try {
@@ -236,6 +246,9 @@ document.getElementById('magic-link-form')?.addEventListener('submit', async (e)
   try {
     const redirectTo = explicitRedirect || `${window.location.origin}/login.html`
 
+    console.log('[LOGIN] Requesting magic link for:', email)
+    console.log('[LOGIN] emailRedirectTo:', redirectTo)
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -244,6 +257,14 @@ document.getElementById('magic-link-form')?.addEventListener('submit', async (e)
     })
 
     if (error) throw error
+
+    // DIAGNOSTIC: Check if code_verifier was stored
+    const storageKeys = Object.keys(localStorage)
+    const codeVerifierKeys = storageKeys.filter(key => key.includes('code-verifier') || key.includes('pkce'))
+    console.log('[LOGIN DIAGNOSTIC] After signInWithOtp, code_verifier keys:', codeVerifierKeys)
+    codeVerifierKeys.forEach(key => {
+      console.log(`[LOGIN DIAGNOSTIC] ${key}:`, localStorage.getItem(key)?.substring(0, 50) + '...')
+    })
 
     // Show success message
     showAlert('Magic link sent! Check your email to sign in.', 'success')
