@@ -3,11 +3,37 @@ import { login, supabase } from '../lib/supabase-client.js'
 // Check for magic link callback or existing session on page load
 (async () => {
   try {
-    // Wait for Supabase to process PKCE code parameter if present
     const hasCodeParam = window.location.search.includes('code=')
+
     if (hasCodeParam) {
-      console.log('[LOGIN] PKCE code detected, waiting for Supabase to process...')
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      console.log('[LOGIN] PKCE code detected, waiting for auth state change...')
+
+      // Listen for auth state change from PKCE processing
+      const authPromise = new Promise((resolve) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          console.log('[LOGIN] Auth state changed:', event, { hasSession: !!session })
+          if (event === 'SIGNED_IN' && session) {
+            subscription.unsubscribe()
+            resolve(session)
+          }
+        })
+
+        // Also set a timeout in case auth state change doesn't fire
+        setTimeout(() => {
+          subscription.unsubscribe()
+          resolve(null)
+        }, 3000)
+      })
+
+      const session = await authPromise
+
+      if (session) {
+        console.log('[LOGIN] Got session from auth state change')
+        await handleSessionRedirect(session)
+        return
+      }
+
+      console.log('[LOGIN] No session from auth state change, checking manually...')
     }
 
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -24,6 +50,18 @@ import { login, supabase } from '../lib/supabase-client.js'
     })
 
     if (session) {
+      await handleSessionRedirect(session)
+    } else {
+      console.log('[LOGIN] No session found, showing login form')
+    }
+  } catch (err) {
+    console.error('[LOGIN] Fatal error:', err)
+    // Show login form on any error
+  }
+})()
+
+async function handleSessionRedirect(session) {
+  try {
       // User authenticated via magic link or has existing session
       console.log('[LOGIN] Session found, fetching user role...')
 
@@ -54,15 +92,10 @@ import { login, supabase } from '../lib/supabase-client.js'
       })
 
       window.location.href = `${redirectUrl}#${hashParams.toString()}`
-      return
-    }
-
-    console.log('[LOGIN] No session found, showing login form')
   } catch (err) {
-    console.error('[LOGIN] Fatal error:', err)
-    // Show login form on any error
+    console.error('[LOGIN] Error in handleSessionRedirect:', err)
   }
-})()
+}
 
 // Tab switching functionality
 const tabs = document.querySelectorAll('.auth-tab')
